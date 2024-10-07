@@ -13,19 +13,17 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package dev.ikm.komet.kview.mvvm.model;
+package dev.ikm.komet.kview.mvvm.view.reasoner;
 
-import dev.ikm.tinkar.terms.EntityFacade;
+import javafx.fxml.FXML;
+import javafx.scene.control.Label;
+import javafx.scene.image.ImageView;
 
-/**
- * object to capture data for a Pattern>Field
- * @param displayName display name
- * @param dataType tinkar data type
- * @param purpose purpose concept
- * @param meaning meaning concept
- * @param comments user comments
- */
-public record PatternField(String displayName, EntityFacade dataType,
-                          EntityFacade purpose, EntityFacade meaning, String comments) {
+public class NextGenReasonerInferredChangeController {
 
+    @FXML
+    private ImageView identicon;
+
+    @FXML
+    private Label conceptLabel;
 }

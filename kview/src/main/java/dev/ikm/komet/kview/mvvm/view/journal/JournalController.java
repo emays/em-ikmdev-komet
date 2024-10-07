@@ -34,6 +34,7 @@ import dev.ikm.komet.framework.window.WindowSettings;
 import dev.ikm.komet.kview.events.JournalTileEvent;
 import dev.ikm.komet.kview.events.MakeConceptWindowEvent;
 import dev.ikm.komet.kview.events.ShowNavigationalPanelEvent;
+import dev.ikm.komet.kview.events.reasoner.CloseReasonerPanelEvent;
 import dev.ikm.komet.kview.fxutils.MenuHelper;
 import dev.ikm.komet.kview.fxutils.SlideOutTrayHelper;
 import dev.ikm.komet.kview.fxutils.window.WindowSupport;
@@ -45,6 +46,7 @@ import dev.ikm.komet.kview.mvvm.view.details.DetailsNode;
 import dev.ikm.komet.kview.mvvm.view.details.DetailsNodeFactory;
 import dev.ikm.komet.kview.mvvm.view.pattern.PatternDetailsController;
 import dev.ikm.komet.kview.mvvm.view.progress.ProgressController;
+import dev.ikm.komet.kview.mvvm.view.reasoner.NextGenReasonerController;
 import dev.ikm.komet.kview.mvvm.view.search.NextGenSearchController;
 import dev.ikm.komet.kview.mvvm.viewmodel.NextGenSearchViewModel;
 import dev.ikm.komet.kview.mvvm.viewmodel.StampViewModel;
@@ -178,6 +180,9 @@ public class JournalController {
     private Pane nexGenSearchSlideoutTrayPane;
 
     @FXML
+    private Pane nextGenReasonerSlideoutTrayPane;
+
+    @FXML
     private Pane progressSlideoutTrayPane;
 
     @FXML
@@ -199,6 +204,9 @@ public class JournalController {
     private ToggleButton nextGenSearchToggleButton;
 
     @FXML
+    private ToggleButton nextGenReasonerToggleButton;
+
+    @FXML
     private Button addButton;
 
     @FXML
@@ -212,6 +220,9 @@ public class JournalController {
     private Pane navigatorNodePanel;
     private Pane searchNodePanel;
     private Pane nextGenSearchPanel;
+
+    private Pane nextGenReasonerPanel;
+
     private BorderPane reasonerNodePanel;
 
     private ActivityStream navigatorActivityStream;
@@ -228,11 +239,18 @@ public class JournalController {
     private GraphNavigatorNode navigatorNode;
     private final ObservableList<ConceptPreference> conceptWindows = FXCollections.observableArrayList();
 
-    protected static final String NEXT_GEN_SEARCH_FXML_URL = "next-gen-search.fxml";
+    private static final String NEXT_GEN_SEARCH_FXML_URL = "next-gen-search.fxml";
+
+    private static final String NEXT_GEN_REASONER_FXML_URL = "reasoner.fxml";
 
     private NextGenSearchController nextGenSearchController;
+
+    private NextGenReasonerController nextGenReasonserController;
+
     private Subscriber<MakeConceptWindowEvent> makeConceptWindowEventSubscriber;
     private Subscriber<ShowNavigationalPanelEvent> showNavigationalPanelEventSubscriber;
+
+    private Subscriber<CloseReasonerPanelEvent> closeReasonerPanelEventSubscriber;
 
     @InjectViewModel
     private NextGenSearchViewModel nextGenSearchViewModel;
@@ -290,6 +308,11 @@ public class JournalController {
         };
         journalEventBus.subscribe(JOURNAL_TOPIC, ShowNavigationalPanelEvent.class, showNavigationalPanelEventSubscriber);
 
+        // listening to the event fired when the user clicks the 'X' on the reasoner slide out
+        // and wire into the toggle group because we already have a listener on this property
+        closeReasonerPanelEventSubscriber = evt -> sidebarToggleGroup.selectToggle(null);
+        journalEventBus.subscribe(JOURNAL_TOPIC, CloseReasonerPanelEvent.class, closeReasonerPanelEventSubscriber);
+
         // initially drop region is invisible
         dropAnimationRegion.setVisible(false);
 
@@ -302,9 +325,9 @@ public class JournalController {
 
     private void setupScalableDesktop() {
         journalBorderPane.addEventHandler(KeyEvent.KEY_PRESSED, keyEvent -> {
-            // if command key down make desktop surface mouse transparent.
+            // if control key down make desktop surface mouse transparent.
             // Meaning don't allow the dragging of concept windows, but allow panning of desktop surface.
-            if (keyEvent.getCode() == KeyCode.COMMAND || keyEvent.getCode() == KeyCode.CONTROL) {
+            if (keyEvent.getCode() == KeyCode.CONTROL) {
                 desktopSurfacePane.setMouseTransparent(true);
                 desktopSurfaceScrollPane.setPannable(true);
                 StackPane viewport = (StackPane) desktopSurfaceScrollPane.lookup(".viewport");
@@ -315,7 +338,7 @@ public class JournalController {
 
         journalBorderPane.addEventHandler(KeyEvent.KEY_RELEASED, keyEvent -> {
             // Turn desktop surface back to listen for drag and mouse press and set cursor back to default.
-            if (keyEvent.getCode() == KeyCode.COMMAND || keyEvent.getCode() == KeyCode.CONTROL) {
+            if (keyEvent.getCode() == KeyCode.CONTROL) {
                 desktopSurfacePane.setMouseTransparent(false);
                 desktopSurfaceScrollPane.setPannable(false);
                 StackPane viewport = (StackPane) desktopSurfaceScrollPane.lookup(".viewport");
@@ -399,35 +422,34 @@ public class JournalController {
         Subscriber<ProgressEvent> progressPopupSubscriber = evt -> {
             // if summon event type, load stuff and reference task to progress popup
             if (evt.getEventType() == SUMMON) {
-                progressToggleButton.setVisible(true);
-                Task<Void> task = evt.getTask();
-                JFXNode<Pane, ProgressController> progressJFXNode = createProgressBox(task, evt.getCancelButtonText());
-                ProgressController progressController = progressJFXNode.controller();
-                Pane progressPane = progressJFXNode.node();
-                PopOver popOver = new PopOver(progressPane);
+                Platform.runLater(() -> {
+                    progressToggleButton.setVisible(true);
+                    Task<Void> task = evt.getTask();
+                    JFXNode<Pane, ProgressController> progressJFXNode = createProgressBox(task, evt.getCancelButtonText());
+                    ProgressController progressController = progressJFXNode.controller();
+                    Pane progressPane = progressJFXNode.node();
+                    PopOver popOver = new PopOver(progressPane);
 
-                // setup close button
-                progressController.getCloseProgressButton().setOnAction(actionEvent -> {
-                    popOver.hide();
-                    progressController.cleanup();
+                    // setup close button
+                    progressController.getCloseProgressButton().setOnAction(actionEvent -> {
+                        popOver.hide();
+                        progressController.cleanup();
+                    });
+
+                    popOver.setOnHidden(windowEvent -> progressController.cleanup());
+                    popOver.setArrowLocation(PopOver.ArrowLocation.LEFT_TOP);
+                    popOver.show(progressToggleButton);
+
+                    // Create one inside the list for bump out
+                    JFXNode<Pane, ProgressController> progressJFXNode2 = createProgressBox(task, evt.getCancelButtonText());
+                    ProgressController progressController2 = progressJFXNode2.controller();
+                    Pane progressBox2 = progressJFXNode2.node();
+                    progressController2.getCloseProgressButton().setOnAction(actionEvent -> {
+                        progressController2.cleanup();
+                        progressListVBox.getChildren().remove(progressBox2);
+                    });
+                    progressListVBox.getChildren().addFirst(progressBox2);
                 });
-
-                popOver.setOnHidden(windowEvent -> {
-                    progressController.cleanup();
-                });
-
-                popOver.setArrowLocation(PopOver.ArrowLocation.LEFT_TOP);
-                Platform.runLater(() -> popOver.show(progressToggleButton));
-
-                // Create one inside the list for bump out
-                JFXNode<Pane, ProgressController> progressJFXNode2 = createProgressBox(task, evt.getCancelButtonText());
-                ProgressController progressController2 = progressJFXNode2.controller();
-                Pane progressBox2 = progressJFXNode2.node();
-                progressController2.getCloseProgressButton().setOnAction(actionEvent -> {
-                    progressController2.cleanup();
-                    Platform.runLater(()->  progressListVBox.getChildren().remove(progressBox2));
-                });
-                Platform.runLater(()->  progressListVBox.getChildren().add(0, progressBox2));
             }
         };
         journalEventBus.subscribe(PROGRESS_TOPIC, ProgressEvent.class, progressPopupSubscriber);
@@ -471,6 +493,8 @@ public class JournalController {
             return nexGenSearchSlideoutTrayPane;
         } else if (progressToggleButton.equals(selectedToggleButton)) {
             return progressSlideoutTrayPane;
+        } else if (nextGenReasonerToggleButton.equals(selectedToggleButton)) {
+            return nextGenReasonerSlideoutTrayPane;
         }
         return null;
     }
@@ -523,10 +547,10 @@ public class JournalController {
         return navigatorNode;
     }
 
+    /**
+     * Add a Next Gen Search, currently tied to the "comment" left lav button
+     */
     public void loadNextGenSearchPanel() {
-        // +-----------------------------------
-        // ! Add a Next Gen Search
-        // +------------------------------------
         Config nextGenSearchConfig = new Config(NextGenSearchController.class.getResource(NEXT_GEN_SEARCH_FXML_URL))
                 .updateViewModel("nextGenSearchViewModel", (nextGenSearchViewModel) ->
                         nextGenSearchViewModel
@@ -540,6 +564,19 @@ public class JournalController {
         nextGenSearchPanel = nextGenSearchJFXNode.node();
 
         setupSlideOutTrayPane(nextGenSearchPanel, nexGenSearchSlideoutTrayPane);
+    }
+
+    /**
+     * Add a Next Gen Reasoner Results, currently tied to the "bell" left nav button
+     */
+    public void loadNextGenReasonerPanel() {
+        JFXNode<Pane, NextGenReasonerController> reasonerJFXNode = FXMLMvvmLoader.make(
+                NextGenReasonerController.class.getResource(NEXT_GEN_REASONER_FXML_URL));
+
+        nextGenReasonserController = reasonerJFXNode.controller();
+        nextGenReasonerPanel = reasonerJFXNode.node();
+
+        setupSlideOutTrayPane(nextGenReasonerPanel, nextGenReasonerSlideoutTrayPane);
     }
 
     private void loadSearchPanel(PublicIdStringKey<ActivityStream> searchActivityStreamKey,
@@ -642,7 +679,7 @@ public class JournalController {
         Set<Node> draggableToolbar = kometNodePanel.lookupAll(".draggable-region");
         Node[] draggables = new Node[draggableToolbar.size()];
 
-        WindowSupport windowSupport = new WindowSupport(kometNodePanel, draggableToolbar.toArray(draggables));
+        WindowSupport windowSupport = new WindowSupport(kometNodePanel, desktopSurfacePane, draggableToolbar.toArray(draggables));
         //Adding the concept window panel as a child to the desktop pane.
         desktopSurfacePane.getChildren().add(kometNodePanel);
 
@@ -672,8 +709,8 @@ public class JournalController {
         if (conceptWindowSettingsMap != null) {
             kometNodePanel.setPrefHeight((Double)conceptWindowSettingsMap.get(CONCEPT_HEIGHT));
             kometNodePanel.setPrefWidth((Double)conceptWindowSettingsMap.get(CONCEPT_WIDTH));
-            kometNodePanel.setLayoutX((Double)conceptWindowSettingsMap.get(CONCEPT_XPOS));
-            kometNodePanel.setLayoutY((Double)conceptWindowSettingsMap.get(CONCEPT_YPOS));
+            kometNodePanel.setTranslateX((Double)conceptWindowSettingsMap.get(CONCEPT_XPOS));
+            kometNodePanel.setTranslateY((Double)conceptWindowSettingsMap.get(CONCEPT_YPOS));
         }
     }
 
@@ -714,7 +751,7 @@ public class JournalController {
         Set<Node> draggableToolbar = kometNodePanel.lookupAll(".draggable-region");
         Node[] draggables = new Node[draggableToolbar.size()];
 
-        WindowSupport windowSupport = new WindowSupport(kometNodePanel, draggableToolbar.toArray(draggables));
+        WindowSupport windowSupport = new WindowSupport(kometNodePanel, desktopSurfacePane, draggableToolbar.toArray(draggables));
         //Adding the concept window panel as a child to the desktop pane.
         desktopSurfacePane.getChildren().add(kometNodePanel);
 
@@ -780,7 +817,7 @@ public class JournalController {
         Set<Node> draggableToolbar = kometNodePanel.lookupAll(".draggable-region");
         Node[] draggables = new Node[draggableToolbar.size()];
 
-        WindowSupport windowSupport = new WindowSupport(kometNodePanel, draggableToolbar.toArray(draggables));
+        WindowSupport windowSupport = new WindowSupport(kometNodePanel, desktopSurfacePane, draggableToolbar.toArray(draggables));
         //Adding the concept window panel as a child to the desktop pane.
         desktopSurfacePane.getChildren().add(kometNodePanel);
 
@@ -851,7 +888,7 @@ public class JournalController {
         Set<Node> draggableToolbar = kometNodePanel.lookupAll(".draggable-region");
         Node[] draggables = new Node[draggableToolbar.size()];
 
-        WindowSupport windowSupport = new WindowSupport(kometNodePanel, draggableToolbar.toArray(draggables));
+        WindowSupport windowSupport = new WindowSupport(kometNodePanel, desktopSurfacePane, draggableToolbar.toArray(draggables));
         //Adding the concept window panel as a child to the desktop pane.
         desktopSurfacePane.getChildren().add(kometNodePanel);
 
@@ -1081,7 +1118,7 @@ public class JournalController {
                 kometNodePanel.setLayoutX(x);
                 kometNodePanel.setLayoutY(y);
 
-                WindowSupport windowSupport = new WindowSupport(kometNodePanel, draggableToolbar.toArray(draggables));
+                WindowSupport windowSupport = new WindowSupport(kometNodePanel, desktopSurfacePane, draggableToolbar.toArray(draggables));
                 if (staggerWindowsX.get() % 3 == 0) {
                     staggerWindowsY.incrementAndGet();
                 }
@@ -1334,7 +1371,7 @@ public class JournalController {
         Set<Node> draggableToolbar = kometNodePanel.lookupAll(".draggable-region");
         Node[] draggables = new Node[draggableToolbar.size()];
 
-        WindowSupport windowSupport = new WindowSupport(kometNodePanel, draggableToolbar.toArray(draggables));
+        WindowSupport windowSupport = new WindowSupport(kometNodePanel, desktopSurfacePane, draggableToolbar.toArray(draggables));
         //Adding the concept window panel as a child to the desktop pane.
         desktopSurfacePane.getChildren().add(kometNodePanel);
 

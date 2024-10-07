@@ -13,24 +13,23 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package dev.ikm.komet.kview.events.pattern;
+package dev.ikm.komet.kview.events.reasoner;
 
 import dev.ikm.komet.framework.events.Evt;
 import dev.ikm.komet.framework.events.EvtType;
 
-public class PatternPropertyPanelEvent extends Evt {
+public class CloseReasonerPanelEvent extends Evt {
 
-    public static final EvtType<PatternPropertyPanelEvent> OPEN_PANEL = new EvtType<>(Evt.ANY, "OPEN_PANEL");
-
-    public static final EvtType<PatternPropertyPanelEvent> CLOSE_PANEL = new EvtType<>(Evt.ANY, "CLOSE_PANEL");
-
+    public static final EvtType<CloseReasonerPanelEvent> CLOSE = new EvtType<>(Evt.ANY, "CLOSE");
 
     /**
+     * Constructs a prototypical Event.
      *
-     * @param source        the object on which the Event initially occurred
-     * @param eventType     type of the event
+     * @param source    the object on which the Event initially occurred
+     * @param eventType
+     * @throws IllegalArgumentException if source is null
      */
-    public PatternPropertyPanelEvent(Object source, EvtType<PatternPropertyPanelEvent> eventType) {
+    public CloseReasonerPanelEvent(Object source, EvtType eventType) {
         super(source, eventType);
     }
 }
