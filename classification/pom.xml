@@ -37,6 +37,23 @@
             <groupId>${tinkar-core.groupId}</groupId>
             <artifactId>reasoner-service</artifactId>
         </dependency>
+        <dependency>
+            <groupId>${tinkar-core.groupId}</groupId>
+            <artifactId>reasoner-elk-owl</artifactId>
+        </dependency>
+        <dependency>
+            <groupId>${tinkar-core.groupId}</groupId>
+            <artifactId>reasoner-elk-snomed</artifactId>
+        </dependency>
+        <dependency>
+            <groupId>${tinkar-core.groupId}</groupId>
+            <artifactId>reasoner-hybrid</artifactId>
+        </dependency>
+		<dependency><!-- <groupId>com.google.code.findbugs</groupId>-->
+			<groupId>dev.ikm.jpms</groupId>
+			<artifactId>jsr305</artifactId>
+			<version>3.0.2-r7</version>
+		</dependency>
     </dependencies>
     <build>
         <plugins>

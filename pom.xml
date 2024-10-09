@@ -68,7 +68,7 @@
         <!-- Tinkar Core Variables -->
         <tinkar-core.groupId>dev.ikm.tinkar</tinkar-core.groupId>
         <tinkar-composer.version>1.4.0</tinkar-composer.version>
-        <tinkar-core.version>1.72.0</tinkar-core.version>
+        <tinkar-core.version>1.73.0-SNAPSHOT</tinkar-core.version>
 
         <!-- IKM Evrete Variables -->
         <ikm-evrete.groupId>org.evrete</ikm-evrete.groupId>
@@ -121,6 +121,21 @@
             <dependency>
                 <groupId>${tinkar-core.groupId}</groupId>
                 <artifactId>reasoner-service</artifactId>
+                <version>${tinkar-core.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>${tinkar-core.groupId}</groupId>
+                <artifactId>reasoner-elk-owl</artifactId>
+                <version>${tinkar-core.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>${tinkar-core.groupId}</groupId>
+                <artifactId>reasoner-elk-snomed</artifactId>
+                <version>${tinkar-core.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>${tinkar-core.groupId}</groupId>
+                <artifactId>reasoner-hybrid</artifactId>
                 <version>${tinkar-core.version}</version>
             </dependency>
             <dependency>

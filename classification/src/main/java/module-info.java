@@ -34,6 +34,10 @@ module dev.ikm.komet.classification {
 
 	uses ReasonerService;
 
+	requires dev.ikm.tinkar.reasoner.elkowl;
+	requires dev.ikm.tinkar.reasoner.elksnomed;
+	requires dev.ikm.tinkar.reasoner.hybrid;
+
 	exports dev.ikm.komet.reasoner;
 
 	opens dev.ikm.komet.reasoner;
