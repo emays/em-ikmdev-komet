@@ -15,15 +15,16 @@
  */
 package dev.ikm.komet.reasoner.ui;
 
-import dev.ikm.komet.reasoner.ClassifierResults;
-import dev.ikm.tinkar.common.service.TinkExecutor;
-import dev.ikm.tinkar.common.service.TrackingCallable;
-import dev.ikm.tinkar.reasoner.service.ReasonerService;
+import java.util.concurrent.Future;
+import java.util.function.Consumer;
+
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import java.util.concurrent.Future;
-import java.util.function.Consumer;
+import dev.ikm.tinkar.common.service.TinkExecutor;
+import dev.ikm.tinkar.common.service.TrackingCallable;
+import dev.ikm.tinkar.reasoner.service.ClassifierResults;
+import dev.ikm.tinkar.reasoner.service.ReasonerService;
 
 /**
  * Reasoning Tasks

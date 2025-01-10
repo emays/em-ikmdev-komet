@@ -36,6 +36,7 @@ public class ComputeInferencesTask extends TrackingCallable<ReasonerService> {
 	@Override
 	protected ReasonerService compute() throws Exception {
 		reasonerService.computeInferences();
+		reasonerService.buildNecessaryNormalForm();
 		updateMessage("Computed taxonomy in " + durationString());
 		LOG.info("Computed taxonomy in " + durationString());
 		return reasonerService;
