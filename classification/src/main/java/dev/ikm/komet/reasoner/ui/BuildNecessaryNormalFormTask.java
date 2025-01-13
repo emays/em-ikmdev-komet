@@ -21,23 +21,24 @@ import org.slf4j.LoggerFactory;
 import dev.ikm.tinkar.reasoner.service.ReasonerService;
 import dev.ikm.tinkar.common.service.TrackingCallable;
 
-public class ComputeInferencesTask extends TrackingCallable<ReasonerService> {
+public class BuildNecessaryNormalFormTask extends TrackingCallable<ReasonerService> {
 
-	private static final Logger LOG = LoggerFactory.getLogger(ComputeInferencesTask.class);
+	private static final Logger LOG = LoggerFactory.getLogger(BuildNecessaryNormalFormTask.class);
 
 	private final ReasonerService reasonerService;
 
-	public ComputeInferencesTask(ReasonerService reasonerService) {
+	public BuildNecessaryNormalFormTask(ReasonerService reasonerService) {
 		super(false, true);
 		this.reasonerService = reasonerService;
-		updateTitle("Computing inferences");
+		updateTitle("Building necessary normal form");
 	}
 
 	@Override
 	protected ReasonerService compute() throws Exception {
-		reasonerService.computeInferences();
-		updateMessage("Computed inferences in " + durationString());
-		LOG.info("Computed inferences in " + durationString());
+		reasonerService.buildNecessaryNormalForm();
+		String msg = "Build necessary normal form in "+ durationString();
+		updateMessage(msg);
+		LOG.info(msg);
 		return reasonerService;
 	}
 

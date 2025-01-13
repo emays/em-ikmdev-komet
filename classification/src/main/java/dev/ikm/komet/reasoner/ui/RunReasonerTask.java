@@ -57,57 +57,69 @@ public class RunReasonerTask extends TrackingCallable<ReasonerService> {
 
 	private final Consumer<ClassifierResults> classifierResultsConsumer;
 
-	public RunReasonerTask(ReasonerService reasonerService,
-			Consumer<ClassifierResults> classifierResultsConsumer) {
+	private final int maxWork = 5;
+
+	public RunReasonerTask(ReasonerService reasonerService, Consumer<ClassifierResults> classifierResultsConsumer) {
 		super(true, true);
 		this.reasonerService = reasonerService;
 		this.classifierResultsConsumer = classifierResultsConsumer;
 		updateTitle("Running reasoner (" + reasonerService.getClass().getSimpleName() + "): "
 				+ reasonerService.getViewCalculator()
 						.getPreferredDescriptionTextWithFallbackOrNid(reasonerService.getStatedAxiomPattern()));
-		updateProgress(0, 4);
+		updateProgress(0, maxWork);
 	}
 
 	@Override
 	protected ReasonerService compute() throws Exception {
 		reasonerService.setProgressUpdater(this);
-		final int maxWork = 4;
 		int workDone = 1;
 		String msg;
-		//
-		msg = "Step " + workDone + ": Extracting data";
-		updateMessage(msg);
-		LOG.info(msg);
-		ExtractDataTask extractTask = new ExtractDataTask(reasonerService);
-		Future<ReasonerService> extractFuture = TinkExecutor.threadPool().submit(extractTask);
-		extractFuture.get();
-		updateProgress(workDone++, maxWork);
-		//
-		msg = "Step " + workDone + ": Loading data into reasoner";
-		updateMessage(msg);
-		LOG.info(msg);
-		LoadDataTask loadTask = new LoadDataTask(reasonerService);
-		Future<ReasonerService> loadFuture = TinkExecutor.threadPool().submit(loadTask);
-		loadFuture.get();
-		updateProgress(workDone++, maxWork);
-		//
-		msg = "Step " + workDone + ": Computing taxonomy";
-		updateMessage(msg);
-		LOG.info(msg);
-		ComputeInferencesTask classifyTask = new ComputeInferencesTask(reasonerService);
-		Future<ReasonerService> classifyFuture = TinkExecutor.threadPool().submit(classifyTask);
-		classifyFuture.get();
-		updateProgress(workDone++, maxWork);
-		//
-		msg = "Step " + workDone + ": Processing results";
-		updateMessage(msg);
-		LOG.info(msg);
-		ProcessResultsTask processResultsTask = new ProcessResultsTask(reasonerService);
-		Future<ClassifierResults> processResultsFuture = TinkExecutor.threadPool().submit(processResultsTask);
-		ClassifierResults classifierResults = processResultsFuture.get();
-		updateProgress(workDone++, maxWork);
-		//
-		classifierResultsConsumer.accept(classifierResults);
+		{
+			msg = "Step " + workDone + ": Extracting data";
+			updateMessage(msg);
+			LOG.info(msg);
+			ExtractDataTask task = new ExtractDataTask(reasonerService);
+			Future<ReasonerService> future = TinkExecutor.threadPool().submit(task);
+			future.get();
+			updateProgress(workDone++, maxWork);
+		}
+		{
+			msg = "Step " + workDone + ": Loading data into reasoner";
+			updateMessage(msg);
+			LOG.info(msg);
+			LoadDataTask task = new LoadDataTask(reasonerService);
+			Future<ReasonerService> future = TinkExecutor.threadPool().submit(task);
+			future.get();
+			updateProgress(workDone++, maxWork);
+		}
+		{
+			msg = "Step " + workDone + ": Computing inferences";
+			updateMessage(msg);
+			LOG.info(msg);
+			ComputeInferencesTask task = new ComputeInferencesTask(reasonerService);
+			Future<ReasonerService> future = TinkExecutor.threadPool().submit(task);
+			future.get();
+			updateProgress(workDone++, maxWork);
+		}
+		{
+			msg = "Step " + workDone + ": Building necessary normal form";
+			updateMessage(msg);
+			LOG.info(msg);
+			BuildNecessaryNormalFormTask task = new BuildNecessaryNormalFormTask(reasonerService);
+			Future<ReasonerService> future = TinkExecutor.threadPool().submit(task);
+			future.get();
+			updateProgress(workDone++, maxWork);
+		}
+		{
+			msg = "Step " + workDone + ": Processing results";
+			updateMessage(msg);
+			LOG.info(msg);
+			ProcessResultsTask task = new ProcessResultsTask(reasonerService);
+			Future<ClassifierResults> future = TinkExecutor.threadPool().submit(task);
+			ClassifierResults classifierResults = future.get();
+			updateProgress(workDone++, maxWork);
+			classifierResultsConsumer.accept(classifierResults);
+		}
 		msg = "Reasoner run complete in " + durationString();
 		updateMessage(msg);
 		LOG.info(msg);
