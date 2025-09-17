@@ -553,6 +553,7 @@ public class ClauseView {
     }
     
 	private void setupForInterval() {
+		LOG.info(">>>>>" + axiomVertex);
 		if (this.axiomView.premiseType == STATED) {
 			editable = true;
 		}
